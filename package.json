@@ -1,0 +1,17 @@
+{
+	"name": "fire-lib-js-svelte",
+	"version": "0.1.0",
+	"author": "Sören Meier <soeren@s-me.ch>",
+	"type": "module",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/fire-lib/fire-js-svelte.git"
+	},
+	"license": "MIT or Apache-2.0",
+	"exports": {
+		"./": "./src/"
+	},
+	"dependencies": {
+		"fire": "npm:fire-lib-js@^0.2.5"
+	}
+}
