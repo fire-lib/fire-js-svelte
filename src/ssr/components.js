@@ -38,9 +38,6 @@ import { relative } from 'path';
 usedSsrComponents(f => relative(__dirname, f))
 */
 export function usedSsrComponents(relativeFn) {
-	if (!dirname)
-		throw new Error('expected dirname in usedSsrComponents');
-
 	return {
 		transform(code, id, options) {
 			if (!options?.ssr || !id.endsWith('.svelte'))
