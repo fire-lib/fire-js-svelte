@@ -100,8 +100,13 @@ export default class Router {
 	_listen() {
 		window.addEventListener('click', e => {
 			const link = e.target.closest('a');
+			const openInNewTab = e.metaKey || e.ctrlKey || e.shiftKey;
+			const saveLink = e.altKey;
+			if (!link || !link.href || openInNewTab || saveLink)
+				return;
 
-			if (!link)
+			const target = link?.target ?? '';
+			if (target.toLowerCase() === '_blank')
 				return;
 
 			const uri = this._convertUrlToUri(link.href);
