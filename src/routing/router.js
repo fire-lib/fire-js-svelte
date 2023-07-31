@@ -3,12 +3,8 @@ import Listeners from 'fire/util/listeners.js';
 import Route from './route.js';
 import Request from './request.js';
 
-// we store the Router not in a local variable
-// so that hmr works correctly
-const glob = typeof window !== 'undefined' ? window : globalThis;
-
 export default class Router {
-	/// Creates a new Router and stores it globally
+	/// Creates a new Router to access it from everywhere, store it in a context
 	/// 
 	/// currentRequest is a store which stores the current request
 	constructor() {
@@ -16,13 +12,6 @@ export default class Router {
 
 		// gets updated before the page might have loaded
 		this.currentRequest = new Writable;
-
-		glob.ROUTER = this;
-	}
-
-	/// Gets the current global Router
-	static get() {
-		return glob.ROUTER;
 	}
 
 	/// Register a route with a uri and a load component function

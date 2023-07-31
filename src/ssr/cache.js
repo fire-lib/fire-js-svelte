@@ -1,41 +1,40 @@
-let store = {};
+export default class SsrCache {
+	constructor() {
+		this.store = {};
 
-/// check if the value is in the cache else calls the fn
-export async function load(key, fn) {
-	if (key in store)
-		return store[key];
-	const v = await fn();
-	set(key, v);
-	return v;
-}
+		if (typeof window !== 'undefined' && 'SSR_STORE' in window)
+			this.store = window.SSR_STORE;
+	}
 
-/// returns null if the data does not exists
-export function get(key) {
-	return store[key] ?? null;
-}
+	/// check if the value is in the cache else calls the fn
+	async load(key, fn) {
+		if (key in this.store)
+			return this.store[key];
+		const v = await fn();
+		this.set(key, v);
+		return v;
+	}
 
-export function set(key, val) {
-	store[key] = val;
-}
+	/// returns null if the data does not exists
+	get(key) {
+		return this.store[key] ?? null;
+	}
 
-export function clear() {
-	store = {};
-}
+	set(key, val) {
+		this.store[key] = val;
+	}
 
-//-- internal
+	clear() {
+		this.store = {};
+	}
 
-/// loads the store from ssr
-export function loadCache() {
-	if (window.SSR_STORE)
-		store = window.SSR_STORE;
+	jsonStringify() {
+		return JSON.stringify(this.store).replaceAll('<', '\\u003c');
+	}
 
-	console.log('store', store);
-}
-
-export function allAsJSON() {
-	return JSON.stringify(store).replaceAll('<', '\\u003c');
-}
-
-export function toHead() {
-	return `\n\t\t<script>window.SSR_STORE = ${ allAsJSON() };</script>`;
+	toHead() {
+		return `\n\t\t<script>window.SSR_STORE = ${
+			this.jsonStringify()
+		};</script>`;
+	}
 }
