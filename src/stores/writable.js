@@ -19,4 +19,8 @@ export default class Writable {
 		this.inner = inner;
 		this.listeners.trigger(inner);
 	}
+
+	setSilent(inner) {
+		this.inner = inner;
+	}
 }

@@ -37,8 +37,9 @@ export default class Router {
 
 	/// setup Router on the client
 	initClient() {
-		this.currentRequest.set(Request.fromCurrent());
-		this.replaceState();
+		const req = Request.fromCurrent();
+		this.currentRequest.set(req);
+		window.history.replaceState(req.toHistoryState(), '');
 		this._listen();
 	}
 
@@ -49,6 +50,16 @@ export default class Router {
 		window.history.replaceState(
 			this.currentRequest.get().toHistoryState(),
 			''
+		);
+	}
+
+	// replace the current Request without triggering any events
+	replaceReq(req) {
+		this.currentRequest.setSilent(req);
+		window.history.replaceState(
+			req.toHistoryState(),
+			'',
+			req.toUriWithSearch()
 		);
 	}
 
@@ -69,21 +80,22 @@ export default class Router {
 	}
 
 	_openReq(req) {
-		if (this.currentRequest.get().uri === req.uri)
+		const nUri = req.toUriWithSearch();
+		if (this.currentRequest.get().toUriWithSearch() === nUri)
 			return;
 
-		window.history.pushState(req.toHistoryState(), '', req.uri);
+		window.history.pushState(req.toHistoryState(), '', nUri);
 		this.currentRequest.set(req);
 	}
 
 	/// Opens a url, does noting if the url does not belong to this router
 	/// If the protocol or host does not match
 	open(url) {
-		const uri = this._convertUrlToUri(url);
-		if (uri === null)
+		const req = this._urlToRequest(url);
+		if (!req)
 			return;
 
-		this._openReq(new Request(uri));
+		this._openReq(req);
 	}
 
 	_listen() {
@@ -98,30 +110,33 @@ export default class Router {
 			if (target.toLowerCase() === '_blank')
 				return;
 
-			const uri = this._convertUrlToUri(link.href);
-			if (uri === null)
+			const req = this._urlToRequest(link.href);
+			if (!req)
 				return;
 
 			e.preventDefault();
 
-			this._openReq(new Request(uri));
+			this._openReq(req);
 		});
 
 		window.addEventListener('popstate', e => {
 			e.preventDefault();
 
-			const req = new Request(e.state.uri, e.state.state ?? null);
+			const req = new Request(
+				e.state.uri,
+				e.state.state ?? {},
+				e.state?.search ?? ''
+			);
 			this.currentRequest.set(req);
 		})
 	}
 
 	/// returns null if the url does not match our host and protocol
-	_convertUrlToUri(url) {
+	_urlToRequest(url, state = {}) {
 		const loc = window.location;
-		const protHost = loc.protocol + '//' + loc.host + '/';
 
 		if (url.startsWith('/'))
-			url = protHost + url.substr(1);
+			url = loc.protocol + '//' + loc.host + url;
 
 		try {
 			url = new URL(url);
@@ -129,10 +144,10 @@ export default class Router {
 			console.log('invalid url', e);
 			return null;
 		}
-
+		// validate protocol and host
 		if (url.protocol !== loc.protocol || url.host !== loc.host)
 			return null;
 
-		return url.pathname;
+		return new Request(url.pathname, state, url.search);
 	}
 }

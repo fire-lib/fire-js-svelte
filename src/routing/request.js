@@ -8,20 +8,39 @@ function sanitizeUri(uri) {
 }
 
 export default class Request {
-	constructor(uri, state = {}) {
+	constructor(uri, state = {}, search = '') {
 		this.uri = sanitizeUri(uri);
+		this.search = new URLSearchParams(search);
 		this.state = state;
 	}
 
 	static fromCurrent() {
-		const state = window.history.state?.state ?? null;
-		return new Request(window.location.pathname, state);
+		return new Request(
+			window.location.pathname,
+			window.history.state?.state ?? null,
+			window.location.search
+		);
+	}
+
+	toUriWithSearch() {
+		let uri = this.uri;
+		if (this.search.size)
+			uri += '?' + this.search.toString();
+
+		return uri;
 	}
 
 	toHistoryState() {
 		return {
 			uri: this.uri,
-			state: this.state
-		}
+			state: this.state,
+			search: this.search.toString()
+		};
+	}
+
+	/// does only copy the state on level deep
+	clone() {
+		const { uri, state, search } = this.toHistoryState();
+		return new Request(uri, { ...state }, search);
 	}
 }
