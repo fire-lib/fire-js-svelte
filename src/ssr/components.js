@@ -58,7 +58,7 @@ ${ code.substr(0, idx) }
 (() => {
 const ctx = __modulesGetContext('modules');
 if (ctx && ctx instanceof Set) {
-	ctx.add('${ file }');
+	ctx.add('${ file.replaceAll('\\', '\\\\') }');
 }
 })();
 ${ code.substr(idx) }
