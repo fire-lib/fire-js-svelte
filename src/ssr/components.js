@@ -21,7 +21,7 @@ export default class SsrComponents {
 		let head = '';
 		for (const req of requirements) {
 			if (req.endsWith('.js')) {
-				head += `\n\t\t<link rel="preload" href="${req}" as="script">`;
+				head += `\n\t\t<link rel="preload" href="${req}" as="script" crossOrigin="anonymous">`;
 			} else if (req.endsWith('.css')) {
 				head += `\n\t\t<link rel="stylesheet" href="${req}">`;
 			}
