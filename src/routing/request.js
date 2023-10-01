@@ -8,10 +8,12 @@ function sanitizeUri(uri) {
 }
 
 export default class Request {
-	constructor(uri, state = {}, search = '') {
+	constructor(uri, state = {}, search = '', opts = {}) {
 		this.uri = sanitizeUri(uri);
 		this.search = new URLSearchParams(search);
 		this.state = state;
+		// manual, click, pop
+		this.origin = opts?.origin ?? 'manual';
 	}
 
 	static fromCurrent() {

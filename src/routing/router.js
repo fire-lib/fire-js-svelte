@@ -90,8 +90,8 @@ export default class Router {
 
 	/// Opens a url, does noting if the url does not belong to this router
 	/// If the protocol or host does not match
-	open(url) {
-		const req = this._urlToRequest(url);
+	open(url, state = {}, opts = {}) {
+		const req = this._urlToRequest(url, state, opts);
 		if (!req)
 			return;
 
@@ -110,7 +110,7 @@ export default class Router {
 			if (target.toLowerCase() === '_blank')
 				return;
 
-			const req = this._urlToRequest(link.href);
+			const req = this._urlToRequest(link.href, {}, { origin: 'click' });
 			if (!req)
 				return;
 
@@ -125,14 +125,15 @@ export default class Router {
 			const req = new Request(
 				e.state.uri,
 				e.state.state ?? {},
-				e.state?.search ?? ''
+				e.state?.search ?? '',
+				{ origin: 'pop' }
 			);
 			this.currentRequest.set(req);
 		})
 	}
 
 	/// returns null if the url does not match our host and protocol
-	_urlToRequest(url, state = {}) {
+	_urlToRequest(url, state = {}, opts = {}) {
 		const loc = window.location;
 
 		if (url.startsWith('/'))
@@ -148,6 +149,6 @@ export default class Router {
 		if (url.protocol !== loc.protocol || url.host !== loc.host)
 			return null;
 
-		return new Request(url.pathname, state, url.search);
+		return new Request(url.pathname, state, url.search, opts);
 	}
 }
