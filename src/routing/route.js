@@ -3,24 +3,45 @@ export default class Route {
 		this.uri = uri;
 		this.isRegex = typeof uri !== 'string';
 		this.loadComp = loadComp;
-		this.props = {};
 
 		if (this.isRegex && !(uri instanceof RegExp))
 			throw new Error('expected a regex as uri');
 	}
 
 	check(req) {
-		if (!this.isRegex)
-			return this.uri === req.uri;
-		const match = req.uri.match(this.uri);
-		if (!match || match[0] != req.uri)
-			return false;
+		const reqUri = req.pathname;
 
-		this.props = match.groups;
-		return true;
+		if (!this.isRegex)
+			return this.uri === reqUri;
+
+		const match = reqUri.match(this.uri);
+		return match && match[0] === reqUri;
 	}
 
-	async load() {
-		return await this.loadComp();
+	/// Regex matches
+	toRegexProps(req) {
+		if (!this.isRegex)
+			return {};
+
+		const match = req.pathname.match(this.uri);
+		return match.groups;
+	}
+
+	toSearchProps(req) {
+		return Object.fromEntries(req.url.searchParams.entries());
+	}
+
+	toProps(req) {
+		return {
+			...this.toRegexProps(req),
+			...this.toSearchProps(req)
+		};
+	}
+
+	/**
+	 * Loads the component corresponding to this route
+	 */
+	async load(req) {
+		return await this.loadComp(req);
 	}
 }
