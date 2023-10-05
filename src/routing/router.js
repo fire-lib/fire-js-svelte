@@ -118,6 +118,17 @@ export default class Router {
 		);
 	}
 
+	/// This is only intended to be used if you wan't to modify the history state
+	/// without triggering a routeChange Event
+	pushReq(req) {
+		this.currentRequest.setSilent(req);
+		window.history.pushState(
+			req.toHistoryState(),
+			'',
+			req.uri
+		);
+	}
+
 	// replace the current Request without triggering any events
 	replaceReq(req) {
 		this.currentRequest.setSilent(req);
