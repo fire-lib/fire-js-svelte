@@ -235,8 +235,13 @@ export default class Router {
 		});
 	}
 
-	/// Opens a url, does nothing if the url does not belong to this router
-	/// If the protocol or host does not match
+	/**
+	 * Opens a url, if the protocol or the host does not match does nothing
+	 *
+	 * @param {string} url must start with a / or a protocol
+	 * @param {any} state some data which should persist page loads
+	 * @param {Object} opts `{ origin, scrollY, history, checkCurrent }`
+	 */
 	open(url, state = {}, opts = {}) {
 		if (!opts?.origin)
 			opts.origin = 'manual';
@@ -244,7 +249,7 @@ export default class Router {
 		if (!req)
 			return;
 
-		this.openReq(req);
+		this.openReq(req, opts);
 	}
 
 	_listen() {
