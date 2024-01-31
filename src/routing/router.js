@@ -32,8 +32,9 @@ export default class Router {
 
 		/**
 		 * currentRequest is a store which stores the current request
+		 * 
+		 * Never set this request manually
 		 */
-		// gets updated before the page might have loaded
 		this.currentRequest = new Writable;
 	}
 
@@ -204,8 +205,10 @@ export default class Router {
 			return console.log('request overriden, version changed');
 
 		// before we update the current Request let's store the scroll position
+		// don't store it if the request comes from a pop event because that
+		// means the history was already replaced
 		const curReq = this.currentRequest.get();
-		if (curReq) {
+		if (curReq && req.origin !== 'pop') {
 			curReq.scrollY = window.scrollY;
 			window.history.replaceState(
 				curReq.toHistoryState(),
@@ -279,7 +282,33 @@ export default class Router {
 			const req = Request.fromCurrent();
 			req.origin = 'pop';
 			this.openReq(req, { history: 'none', checkCurrent: false });
-		})
+		});
+
+		let saveScrollTimeout;
+		window.addEventListener('scroll', e => {
+			const curr = this.currentRequest.get();
+			if (!curr)
+				return;
+
+			// store the scroll position
+			curr.scrollY = window.scrollY;
+
+			if (saveScrollTimeout)
+				return;
+
+			saveScrollTimeout = setTimeout(() => {
+				if (curr.uri !== this.currentRequest.get().uri)
+					return;
+
+				// request still the same, let's update the scroll position
+				window.history.replaceState(
+					curr.toHistoryState(),
+					''
+				);
+
+				saveScrollTimeout = null;
+			}, 200);
+		});
 	}
 
 	/// returns null if the url does not match our host and protocol
