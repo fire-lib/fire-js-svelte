@@ -140,6 +140,14 @@ export default class Router {
 		);
 	}
 
+	/**
+	 * Returns true if we can go back in history
+	 */
+	canGoBack() {
+		const req = this.currentRequest.get();
+		return req ? req.index > 0 : false;
+	}
+
 	/// Goes back a step in the history
 	back() {
 		return window.history.back();
@@ -170,9 +178,13 @@ export default class Router {
 		const checkCurrent = opts?.checkCurrent ?? true;
 
 		const nUri = req.uri;
+		const curReq = this.currentRequest.get();
 
-		if (checkCurrent && this.currentRequest.get()?.uri === nUri)
+		if (checkCurrent && curReq?.uri === nUri)
 			return;
+
+		if (history === 'push' && curReq)
+			req.index = curReq.index + 1;
 
 		// process
 		// trigger requestListener
@@ -207,7 +219,6 @@ export default class Router {
 		// before we update the current Request let's store the scroll position
 		// don't store it if the request comes from a pop event because that
 		// means the history was already replaced
-		const curReq = this.currentRequest.get();
 		if (curReq && req.origin !== 'pop') {
 			curReq.scrollY = window.scrollY;
 			window.history.replaceState(

@@ -28,6 +28,13 @@ export default class Request {
 		 * This does not change while scrolling
 		 */
 		this.scrollY = opts?.scrollY ?? 0;
+
+		/**
+		 * Returns the history index if the current request
+		 * 
+		 * This is should only be set by the router
+		 */
+		this.index = opts?.index ?? 0;
 	}
 
 	static fromCurrent() {
@@ -38,7 +45,8 @@ export default class Request {
 			historyState?.state ?? null,
 			{
 				origin: 'manual',
-				scrollY: historyState?.scrollY ?? window.scrollY
+				scrollY: historyState?.scrollY ?? window.scrollY,
+				index: historyState?.index ?? 0
 			}
 		);
 	}
@@ -65,7 +73,8 @@ export default class Request {
 	toHistoryState() {
 		return {
 			state: this.state,
-			scrollY: this.scrollY
+			scrollY: this.scrollY,
+			index: this.index
 		};
 	}
 
@@ -86,7 +95,8 @@ export default class Request {
 			state,
 			{
 				origin: this.origin,
-				scrollY: this.scrollY
+				scrollY: this.scrollY,
+				index: this.index
 			}
 		);
 	}
