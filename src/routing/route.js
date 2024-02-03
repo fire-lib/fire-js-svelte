@@ -4,7 +4,7 @@ export default class Route {
 		this.isRegex = typeof uri !== 'string';
 		this.loadComp = loadComp;
 
-		if (!this.isRegex && this.uri.endsWith('/'))
+		if (!this.isRegex && this.uri.length > 1 && this.uri.endsWith('/'))
 			this.uri = uri.substring(0, this.uri.length - 1);
 
 		if (this.isRegex && !(uri instanceof RegExp))
