@@ -4,6 +4,9 @@ export default class Route {
 		this.isRegex = typeof uri !== 'string';
 		this.loadComp = loadComp;
 
+		if (!this.isRegex && this.uri.endsWith('/'))
+			this.uri = uri.substring(0, this.uri.length - 1);
+
 		if (this.isRegex && !(uri instanceof RegExp))
 			throw new Error('expected a regex as uri');
 	}

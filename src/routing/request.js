@@ -58,7 +58,7 @@ export default class Request {
 	get pathname() {
 		const p = this.url.pathname;
 		if (p.endsWith('/') && p.length > 1)
-			return p.substring(0, p.length - 2);
+			return p.substring(0, p.length - 1);
 		return p;
 	}
 
