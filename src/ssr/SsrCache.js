@@ -8,8 +8,7 @@ export default class SsrCache {
 
 	/// check if the value is in the cache else calls the fn
 	async load(key, fn) {
-		if (key in this.store)
-			return this.store[key];
+		if (key in this.store) return this.store[key];
 		const v = await fn();
 		this.set(key, v);
 		return v;
@@ -33,8 +32,6 @@ export default class SsrCache {
 	}
 
 	toHead() {
-		return `\n\t\t<script>window.SSR_STORE = ${
-			this.jsonStringify()
-		};</script>`;
+		return `\n\t\t<script>window.SSR_STORE = ${this.jsonStringify()};</script>`;
 	}
 }

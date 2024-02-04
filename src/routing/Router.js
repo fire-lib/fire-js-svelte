@@ -1,12 +1,10 @@
-import Writable from '../stores/writable.js';
-import Listeners from 'fire/util/listeners.js';
-import Barrier from 'fire/util/barrier.js';
-import Route from './route.js';
-import Request from './request.js';
+import Writable from '../stores/Writable.js';
+import Barrier from 'fire/sync/Barrier';
+import Route from './Route.js';
+import Request from './Request.js';
 
 function defaultRequestListener(req, routing) {
-	if (routing.dataReady())
-		return;
+	if (routing.dataReady()) return;
 
 	setTimeout(() => {
 		routing.domReady();
@@ -26,21 +24,21 @@ export default class Router {
 		/**
 		 * newRequest is a store which stores the request which is not completed
 		 */
-		this.newRequest = new Writable;
+		this.newRequest = new Writable();
 		this.requestListener = defaultRequestListener;
 		this.newRequestVersion = 0;
 
 		/**
 		 * currentRequest is a store which stores the current request
-		 * 
+		 *
 		 * Never set this request manually
 		 */
-		this.currentRequest = new Writable;
+		this.currentRequest = new Writable();
 	}
 
 	/**
 	 * Register a route with a uri and a load component function
-	 * 
+	 *
 	 * @param {string} uri should either be a string or a Regex object with
 	 * named groups
 	 * @param {function} loadComp should be function which loads a svelte
@@ -52,7 +50,7 @@ export default class Router {
 
 	/**
 	 * Registers a route
-	 * 
+	 *
 	 * @param {Route} route
 	 */
 	registerRoute(route) {
@@ -66,7 +64,7 @@ export default class Router {
 	 * call routing.dataReady
 	 * and then when the dom is updated call
 	 * routing.domReady
-	 * 
+	 *
 	 * @param {function} fn `(Request, routing) -> void`
 	 */
 	onRequest(fn) {
@@ -79,7 +77,7 @@ export default class Router {
 
 	/**
 	 * Handles Route requests (overrides onRequest)
-	 * 
+	 *
 	 * @param {function} fn `(Request, Route, ready) -> void`
 	 */
 	onRoute(fn) {
@@ -115,7 +113,7 @@ export default class Router {
 		this.currentRequest.get().state = state;
 		window.history.replaceState(
 			this.currentRequest.get().toHistoryState(),
-			''
+			'',
 		);
 	}
 
@@ -123,21 +121,13 @@ export default class Router {
 	/// without triggering a routeChange Event
 	pushReq(req) {
 		this.currentRequest.setSilent(req);
-		window.history.pushState(
-			req.toHistoryState(),
-			'',
-			req.uri
-		);
+		window.history.pushState(req.toHistoryState(), '', req.uri);
 	}
 
 	// replace the current Request without triggering any events
 	replaceReq(req) {
 		this.currentRequest.setSilent(req);
-		window.history.replaceState(
-			req.toHistoryState(),
-			'',
-			req.uri
-		);
+		window.history.replaceState(req.toHistoryState(), '', req.uri);
 	}
 
 	/**
@@ -153,12 +143,11 @@ export default class Router {
 		return window.history.back();
 	}
 
-	/// This triggers the onRequest 
+	/// This triggers the onRequest
 	/// always reloads even if the page might be the same
 	reload() {
 		const req = this.currentRequest.get();
-		if (!req)
-			throw new Error('router does not have a current request');
+		if (!req) throw new Error('router does not have a current request');
 		this.openReq(req.clone(), { history: 'replace', checkCurrent: false });
 	}
 
@@ -169,7 +158,7 @@ export default class Router {
 
 	/**
 	 * Opens a request if the same page is not already open
-	 * 
+	 *
 	 * @param {Request} req
 	 * @param {Object} opts `{ history: push/replace/none, checkCurrent }`
 	 */
@@ -180,11 +169,9 @@ export default class Router {
 		const nUri = req.uri;
 		const curReq = this.currentRequest.get();
 
-		if (checkCurrent && curReq?.uri === nUri)
-			return;
+		if (checkCurrent && curReq?.uri === nUri) return;
 
-		if (history === 'push' && curReq)
-			req.index = curReq.index + 1;
+		if (history === 'push' && curReq) req.index = curReq.index + 1;
 
 		// process
 		// trigger requestListener
@@ -194,11 +181,11 @@ export default class Router {
 		const version = ++this.newRequestVersion;
 		const hasVersionChange = () => this.newRequestVersion !== version;
 
-		const dataBarrier = new Barrier;
+		const dataBarrier = new Barrier();
 		const dataBarrier1 = dataBarrier.add();
 		const dataBarrier2 = dataBarrier.add();
 
-		const domBarrier = new Barrier;
+		const domBarrier = new Barrier();
 		const domBarrier1 = domBarrier.add();
 		const domBarrier2 = domBarrier.add();
 
@@ -208,7 +195,7 @@ export default class Router {
 			},
 			domReady: async () => {
 				return await domBarrier1.ready(hasVersionChange());
-			}
+			},
 		});
 
 		this.newRequest.set(req);
@@ -221,18 +208,11 @@ export default class Router {
 		// means the history was already replaced
 		if (curReq && req.origin !== 'pop') {
 			curReq.scrollY = window.scrollY;
-			window.history.replaceState(
-				curReq.toHistoryState(),
-				''
-			);
+			window.history.replaceState(curReq.toHistoryState(), '');
 		}
 
 		if (history === 'replace') {
-			window.history.replaceState(
-				req.toHistoryState(),
-				'',
-				req.uri
-			);
+			window.history.replaceState(req.toHistoryState(), '', req.uri);
 		} else if (history === 'push') {
 			window.history.pushState(req.toHistoryState(), '', nUri);
 		}
@@ -245,7 +225,7 @@ export default class Router {
 
 		// restore scroll
 		window.scrollTo({
-			top: req.scrollY
+			top: req.scrollY,
 		});
 	}
 
@@ -257,11 +237,9 @@ export default class Router {
 	 * @param {Object} opts `{ origin, scrollY, history, checkCurrent }`
 	 */
 	open(url, state = {}, opts = {}) {
-		if (!opts?.origin)
-			opts.origin = 'manual';
+		if (!opts?.origin) opts.origin = 'manual';
 		const req = this._urlToRequest(url, state, opts);
-		if (!req)
-			return;
+		if (!req) return;
 
 		this.openReq(req, opts);
 	}
@@ -271,16 +249,13 @@ export default class Router {
 			const link = e.target.closest('a');
 			const openInNewTab = e.metaKey || e.ctrlKey || e.shiftKey;
 			const saveLink = e.altKey;
-			if (!link || !link.href || openInNewTab || saveLink)
-				return;
+			if (!link || !link.href || openInNewTab || saveLink) return;
 
 			const target = link?.target ?? '';
-			if (target.toLowerCase() === '_blank')
-				return;
+			if (target.toLowerCase() === '_blank') return;
 
 			const req = this._urlToRequest(link.href, {}, { origin: 'click' });
-			if (!req)
-				return;
+			if (!req) return;
 
 			e.preventDefault();
 
@@ -298,24 +273,18 @@ export default class Router {
 		let saveScrollTimeout;
 		window.addEventListener('scroll', e => {
 			const curr = this.currentRequest.get();
-			if (!curr)
-				return;
+			if (!curr) return;
 
 			// store the scroll position
 			curr.scrollY = window.scrollY;
 
-			if (saveScrollTimeout)
-				return;
+			if (saveScrollTimeout) return;
 
 			saveScrollTimeout = setTimeout(() => {
-				if (curr.uri !== this.currentRequest.get().uri)
-					return;
+				if (curr.uri !== this.currentRequest.get().uri) return;
 
 				// request still the same, let's update the scroll position
-				window.history.replaceState(
-					curr.toHistoryState(),
-					''
-				);
+				window.history.replaceState(curr.toHistoryState(), '');
 
 				saveScrollTimeout = null;
 			}, 200);
@@ -326,8 +295,7 @@ export default class Router {
 	_urlToRequest(url, state = {}, opts = {}) {
 		const loc = window.location;
 
-		if (url.startsWith('/'))
-			url = loc.protocol + '//' + loc.host + url;
+		if (url.startsWith('/')) url = loc.protocol + '//' + loc.host + url;
 
 		try {
 			url = new URL(url);
@@ -336,8 +304,7 @@ export default class Router {
 			return null;
 		}
 		// validate protocol and host
-		if (url.protocol !== loc.protocol || url.host !== loc.host)
-			return null;
+		if (url.protocol !== loc.protocol || url.host !== loc.host) return null;
 
 		return new Request(url, state, opts);
 	}

@@ -1,9 +1,9 @@
-import Listeners from 'fire/util/listeners.js';
+import Listeners from 'fire/sync/Listeners';
 
 export default class Writable {
 	constructor(def = null) {
 		this.inner = def;
-		this.listeners = new Listeners;
+		this.listeners = new Listeners();
 	}
 
 	subscribe(fn) {

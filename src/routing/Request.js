@@ -24,14 +24,14 @@ export default class Request {
 
 		/**
 		 * Returns the scrollY position the request expects to be at
-		 * 
+		 *
 		 * This does not change while scrolling
 		 */
 		this.scrollY = opts?.scrollY ?? 0;
 
 		/**
 		 * Returns the history index if the current request
-		 * 
+		 *
 		 * This is should only be set by the router
 		 */
 		this.index = opts?.index ?? 0;
@@ -46,14 +46,13 @@ export default class Request {
 			{
 				origin: 'manual',
 				scrollY: historyState?.scrollY ?? window.scrollY,
-				index: historyState?.index ?? 0
-			}
+				index: historyState?.index ?? 0,
+			},
 		);
 	}
 
 	/**
-	 * Returns the pathname
-	 * remove any trialing slash
+	 * Returns the pathname of the request removing any trailing slashes
 	 */
 	get pathname() {
 		const p = this.url.pathname;
@@ -74,7 +73,7 @@ export default class Request {
 		return {
 			state: this.state,
 			scrollY: this.scrollY,
-			index: this.index
+			index: this.index,
 		};
 	}
 
@@ -84,20 +83,14 @@ export default class Request {
 		if (this.state !== null) {
 			if (typeof this.state.clone === 'function')
 				state = this.state.clone();
-			else if (typeof this.state === 'object')
-				state = { ...this.state };
-			else
-				state = this.state;
+			else if (typeof this.state === 'object') state = { ...this.state };
+			else state = this.state;
 		}
 
-		return new Request(
-			new URL(this.url.toString()),
-			state,
-			{
-				origin: this.origin,
-				scrollY: this.scrollY,
-				index: this.index
-			}
-		);
+		return new Request(new URL(this.url.toString()), state, {
+			origin: this.origin,
+			scrollY: this.scrollY,
+			index: this.index,
+		});
 	}
 }

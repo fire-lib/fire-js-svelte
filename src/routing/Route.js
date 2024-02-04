@@ -14,8 +14,7 @@ export default class Route {
 	check(req) {
 		const reqUri = req.pathname;
 
-		if (!this.isRegex)
-			return this.uri === reqUri;
+		if (!this.isRegex) return this.uri === reqUri;
 
 		const match = reqUri.match(this.uri);
 		return match && match[0] === reqUri;
@@ -23,8 +22,7 @@ export default class Route {
 
 	/// Regex matches
 	toRegexProps(req) {
-		if (!this.isRegex)
-			return {};
+		if (!this.isRegex) return {};
 
 		const match = req.pathname.match(this.uri);
 		return match.groups;
@@ -37,7 +35,7 @@ export default class Route {
 	toProps(req) {
 		return {
 			...this.toRegexProps(req),
-			...this.toSearchProps(req)
+			...this.toSearchProps(req),
 		};
 	}
 

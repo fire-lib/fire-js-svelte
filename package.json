@@ -1,17 +1,32 @@
 {
 	"name": "fire-lib-js-svelte",
-	"version": "0.2.6",
+	"version": "0.3.0-alpha.1",
 	"author": "Sören Meier <info@soerenmeier.ch>",
 	"type": "module",
+	"scripts": {
+		"test": "vitest",
+		"check": "prettier -c .",
+		"lint": "eslint ./src"
+	},
 	"repository": {
 		"type": "git",
 		"url": "https://github.com/fire-lib/fire-js-svelte.git"
 	},
 	"license": "MIT or Apache-2.0",
 	"exports": {
-		"./*": "./src/*"
+		"./routing/Request": "./src/routing/Request.js",
+		"./routing/Route": "./src/routing/Route.js",
+		"./routing/Router": "./src/routing/Router.js",
+		"./ssr/SsrCache": "./src/ssr/SsrCache.js",
+		"./ssr/SsrComponents": "./src/ssr/SsrComponents.js",
+		"./stores/Writable": "./src/stores/Writable.js"
+	},
+	"devDependencies": {
+		"eslint": "^8.45.0",
+		"vitest": "^1.1.3",
+		"prettier": "^3.2.4"
 	},
 	"dependencies": {
-		"fire": "npm:fire-lib-js@^0.2.10"
+		"fire": "npm:fire-lib-js@0.3.0-alpha.1"
 	}
 }
