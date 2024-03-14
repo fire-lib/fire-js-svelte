@@ -3,8 +3,27 @@ import Barrier from 'fire/sync/Barrier';
 import Route from './Route.js';
 import Request from './Request.js';
 
-function defaultRequestListener(req, routing) {
-	if (routing.dataReady()) return;
+export type RoutingHandler = {
+	dataReady: () => Promise<boolean>;
+	domReady: () => Promise<boolean>;
+};
+
+export type OpenReqOptions = {
+	history?: HistoryAction;
+	checkCurrent?: boolean;
+};
+
+export type HistoryAction = 'push' | 'replace' | 'none';
+
+export type RequestOptions = {
+	origin?: string;
+	scrollY?: number;
+	history?: HistoryAction;
+	checkCurrent?: boolean;
+};
+
+async function defaultRequestListener(req: Request, routing: RoutingHandler) {
+	if (await routing.dataReady()) return;
 
 	setTimeout(() => {
 		routing.domReady();
@@ -13,47 +32,53 @@ function defaultRequestListener(req, routing) {
 
 export default class Router {
 	/**
+	 * All routes
+	 */
+	routes: Route[];
+
+	/**
+	 * newRequest is a store which stores the request which is not completed
+	 */
+	newRequest: Writable<Request>;
+	private requestListener: (req: Request, routing: RoutingHandler) => void;
+	private newRequestVersion: number;
+
+	/**
+	 * currentRequest is a store which stores the current request
+	 *
+	 * Never set this request manually
+	 */
+	currentRequest: Writable<Request>;
+
+	/**
 	 * Creates a new Router to access it from everywhere, store it in a context
 	 */
 	constructor() {
-		/**
-		 * All routes
-		 */
 		this.routes = [];
 
-		/**
-		 * newRequest is a store which stores the request which is not completed
-		 */
-		this.newRequest = new Writable();
+		this.newRequest = new Writable(null as any);
 		this.requestListener = defaultRequestListener;
 		this.newRequestVersion = 0;
 
-		/**
-		 * currentRequest is a store which stores the current request
-		 *
-		 * Never set this request manually
-		 */
-		this.currentRequest = new Writable();
+		this.currentRequest = new Writable(null as any);
 	}
 
 	/**
 	 * Register a route with a uri and a load component function
 	 *
-	 * @param {string} uri should either be a string or a Regex object with
+	 * @param uri should either be a string or a Regex object with
 	 * named groups
-	 * @param {function} loadComp should be function which loads a svelte
+	 * @param loadComp should be function which loads a svelte
 	 * component
 	 */
-	register(uri, loadComp) {
+	register(uri: string | RegExp, loadComp: (req: Request) => Promise<any>) {
 		return this.registerRoute(new Route(uri, loadComp));
 	}
 
 	/**
 	 * Registers a route
-	 *
-	 * @param {Route} route
 	 */
-	registerRoute(route) {
+	registerRoute(route: Route) {
 		this.routes.push(route);
 		return route;
 	}
@@ -65,9 +90,10 @@ export default class Router {
 	 * and then when the dom is updated call
 	 * routing.domReady
 	 *
-	 * @param {function} fn `(Request, routing) -> void`
+	 * @param fn `(Request, routing) -> void`
+	 * @returns a function to remove the listener
 	 */
-	onRequest(fn) {
+	onRequest(fn: (req: Request, routing: RoutingHandler) => void): () => void {
 		this.requestListener = fn;
 
 		return () => {
@@ -77,17 +103,23 @@ export default class Router {
 
 	/**
 	 * Handles Route requests (overrides onRequest)
-	 *
-	 * @param {function} fn `(Request, Route, ready) -> void`
 	 */
-	onRoute(fn) {
+	onRoute(
+		fn: (
+			req: Request,
+			route: Route | null,
+			routing: RoutingHandler,
+		) => void,
+	) {
 		return this.onRequest((req, ready) => {
 			const route = this.route(req);
 			fn(req, route, ready);
 		});
 	}
 
-	/// setup Router on the client
+	/**
+	 * Setup Router on the client
+	 */
 	initClient() {
 		const req = Request.fromCurrent();
 		this.openReq(req, { history: 'none', checkCurrent: false });
@@ -99,7 +131,10 @@ export default class Router {
 		return req;
 	}
 
-	initServer(url) {
+	/**
+	 * Setup Router on the server
+	 */
+	initServer(url: string) {
 		const req = new Request(new URL(url));
 		this.newRequest.set(req);
 		this.currentRequest.set(req);
@@ -107,8 +142,10 @@ export default class Router {
 		return req;
 	}
 
-	/// Replaces the state of the current request
-	replaceState(state = {}) {
+	/**
+	 * Replaces the state of the current request
+	 */
+	replaceState(state: any = {}) {
 		// todo should this trigger a request change?
 		this.currentRequest.get().state = state;
 		window.history.replaceState(
@@ -117,15 +154,18 @@ export default class Router {
 		);
 	}
 
-	/// This is only intended to be used if you wan't to modify the history state
-	/// without triggering a routeChange Event
-	pushReq(req) {
+	/**
+	 * This is only intended to be used if you wan't to modify the history state without triggering a routeChange Event
+	 */
+	pushReq(req: Request) {
 		this.currentRequest.setSilent(req);
 		window.history.pushState(req.toHistoryState(), '', req.uri);
 	}
 
-	// replace the current Request without triggering any events
-	replaceReq(req) {
+	/**
+	 * replace the current Request without triggering any events
+	 */
+	replaceReq(req: Request) {
 		this.currentRequest.setSilent(req);
 		window.history.replaceState(req.toHistoryState(), '', req.uri);
 	}
@@ -133,36 +173,42 @@ export default class Router {
 	/**
 	 * Returns true if we can go back in history
 	 */
-	canGoBack() {
+	canGoBack(): boolean {
 		const req = this.currentRequest.get();
 		return req ? req.index > 0 : false;
 	}
 
-	/// Goes back a step in the history
+	/**
+	 * Goes back a step in the history
+	 */
 	back() {
 		return window.history.back();
 	}
 
-	/// This triggers the onRequest
-	/// always reloads even if the page might be the same
+	/**
+	 * This triggers the onRequest
+	 * always reloads even if the page might be the same
+	 */
 	reload() {
 		const req = this.currentRequest.get();
 		if (!req) throw new Error('router does not have a current request');
 		this.openReq(req.clone(), { history: 'replace', checkCurrent: false });
 	}
 
-	// tries to get the route by the request
-	route(req) {
-		return this.routes.find(r => r.check(req));
+	/**
+	 * tries to get the route by the request
+	 */
+	route(req: Request): Route | null {
+		return this.routes.find(r => r.check(req)) ?? null;
 	}
 
 	/**
 	 * Opens a request if the same page is not already open
 	 *
-	 * @param {Request} req
-	 * @param {Object} opts `{ history: push/replace/none, checkCurrent }`
+	 * @param req
+	 * @param opts `{ history: push/replace/none, checkCurrent }`
 	 */
-	async openReq(req, opts = {}) {
+	async openReq(req: Request, opts: OpenReqOptions = {}): Promise<void> {
 		const history = opts?.history ?? 'push';
 		const checkCurrent = opts?.checkCurrent ?? true;
 
@@ -181,11 +227,11 @@ export default class Router {
 		const version = ++this.newRequestVersion;
 		const hasVersionChange = () => this.newRequestVersion !== version;
 
-		const dataBarrier = new Barrier();
+		const dataBarrier = new Barrier<boolean>();
 		const dataBarrier1 = dataBarrier.add();
 		const dataBarrier2 = dataBarrier.add();
 
-		const domBarrier = new Barrier();
+		const domBarrier = new Barrier<boolean>();
 		const domBarrier1 = domBarrier.add();
 		const domBarrier2 = domBarrier.add();
 
@@ -236,7 +282,7 @@ export default class Router {
 	 * @param {any} state some data which should persist page loads
 	 * @param {Object} opts `{ origin, scrollY, history, checkCurrent }`
 	 */
-	open(url, state = {}, opts = {}) {
+	open(url: string, state?: any, opts: RequestOptions = {}) {
 		if (!opts?.origin) opts.origin = 'manual';
 		const req = this._urlToRequest(url, state, opts);
 		if (!req) return;
@@ -244,8 +290,9 @@ export default class Router {
 		this.openReq(req, opts);
 	}
 
-	_listen() {
+	private _listen() {
 		window.addEventListener('click', e => {
+			// @ts-ignore
 			const link = e.target.closest('a');
 			const openInNewTab = e.metaKey || e.ctrlKey || e.shiftKey;
 			const saveLink = e.altKey;
@@ -270,7 +317,7 @@ export default class Router {
 			this.openReq(req, { history: 'none', checkCurrent: false });
 		});
 
-		let saveScrollTimeout;
+		let saveScrollTimeout: any;
 		window.addEventListener('scroll', e => {
 			const curr = this.currentRequest.get();
 			if (!curr) return;
@@ -292,20 +339,22 @@ export default class Router {
 	}
 
 	/// returns null if the url does not match our host and protocol
-	_urlToRequest(url, state = {}, opts = {}) {
+	private _urlToRequest(url: string, state = {}, opts = {}) {
 		const loc = window.location;
 
 		if (url.startsWith('/')) url = loc.protocol + '//' + loc.host + url;
 
+		let nUrl;
 		try {
-			url = new URL(url);
+			nUrl = new URL(url);
 		} catch (e) {
 			console.log('invalid url', e);
 			return null;
 		}
 		// validate protocol and host
-		if (url.protocol !== loc.protocol || url.host !== loc.host) return null;
+		if (nUrl.protocol !== loc.protocol || nUrl.host !== loc.host)
+			return null;
 
-		return new Request(url, state, opts);
+		return new Request(nUrl, state, opts);
 	}
 }
