@@ -1,6 +1,6 @@
 {
 	"name": "fire-lib-js-svelte",
-	"version": "0.3.0-alpha.2",
+	"version": "0.3.0-alpha.3",
 	"author": "Sören Meier <info@soerenmeier.ch>",
 	"type": "module",
 	"scripts": {
@@ -19,7 +19,7 @@
 		"./routing/Request": "./dist/routing/Request.js",
 		"./routing/Route": "./dist/routing/Route.js",
 		"./routing/Router": "./dist/routing/Router.js",
-		"./ssr/SsrCache": "./dist/dist/SsrCache.js",
+		"./ssr/SsrCache": "./dist/ssr/SsrCache.js",
 		"./ssr/SsrComponents": "./dist/ssr/SsrComponents.js",
 		"./stores/Writable": "./dist/stores/Writable.js"
 	},
